@@ -1,0 +1,51 @@
+Customer:
+  - ID
+  - LASTNAME
+  - FIRSTNAME
+  - books
+  
+  -- addBook(book)
+  -- boolean borrow(book)
+  -- void returns(book)
+  
+  
+Book:
+  - ID
+  - TITLE
+  - AUTHOR
+  - quantity
+  
+  -- boolean isAvailable()
+  -- void borrow()
+  
+
+Desk:
+  - customer
+  
+  -- Set<Book> getBorrowedBooks()
+  
+  -- Set<Book> search(title, author)
+  
+  -- boolean borrow(book)
+  -- void returns(book)
+  
+  -- boolean signIn(firstName, lastName)
+  -- void signOut()
+  -- boolean signUp(firstName, lastName)
+  
+
+Bridge:
+  - BRIDGE
+  - connection
+  - statement
+  
+  -- void createBridge()
+  
+  -- Set<Book> search(title, author)
+
+  -- boolean canBorrow(customer, book)
+  -- void borrow(book)
+  -- void returns(book)
+  
+  -- Customer getCustomer(firstName, lastName)
+  -- Customer createCustomer(firstName, lastName)
