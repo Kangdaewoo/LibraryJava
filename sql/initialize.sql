@@ -1,10 +1,8 @@
-DROP TABLE Transactions;
-DROP TABLE Books;
-DROP TABLE Customers;
-DROP DATABASE Library;
+IF db_id('Library') IS NULL
+	CREATE DATABASE Library
+GO
 
-
-CREATE DATABASE Library;
+USE Library;
 
 CREATE TABLE Books (
 	book_id INTEGER PRIMARY KEY,

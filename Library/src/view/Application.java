@@ -3,6 +3,7 @@ package view;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.WindowEvent;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -56,9 +57,11 @@ public class Application {
 		frame.add(lastNameField);
 
 		JButton logInButton = new JButton("Log in");
-		// Log in
+		// Sign in
 		logInButton.addActionListener(e -> {
-			if (desk.signIn(firstNameField.getText(), lastNameField.getText())) {
+			if (firstNameField.getText().equals(firstNameField.getHint()) || lastNameField.getText().equals(lastNameField.getHint())) {
+				JOptionPane.showMessageDialog(null, "Enter first and last name!");
+			} else if (desk.signIn(firstNameField.getText(), lastNameField.getText())) {
 				JOptionPane.showMessageDialog(null, "Welcome!");
 				setMainPage();
 			} else {
@@ -81,6 +84,13 @@ public class Application {
 			}
 		});
 		frame.add(signUpButton);
+		
+		JButton exitButton = new JButton("Exit");
+		// Exit the app
+		exitButton.addActionListener(e -> {
+			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+		});
+		frame.add(exitButton);
 		
 		frame.revalidate();
 		frame.repaint();

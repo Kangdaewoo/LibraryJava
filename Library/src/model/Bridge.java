@@ -144,8 +144,7 @@ public class Bridge {
 		try {
 			ResultSet rs = statement.executeQuery(query);
 			if (rs.next()) {
-				customer = new Customer(rs.getInt("customer_id"), rs.getString("first_name"),
-						rs.getString("last_name"));
+				customer = new Customer(rs.getInt("customer_id"), rs.getString("first_name"), rs.getString("last_name"));
 			} else {
 				return null;
 			}
