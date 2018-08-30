@@ -21,7 +21,8 @@ public class Bridge {
 	private Statement statement;
 
 	private Bridge() {
-		String connectionUrl = "jdbc:sqlserver://localhost:1433;integratedSecurity=true;database=Library";
+		int portNum = 1433;
+		String connectionUrl = "jdbc:sqlserver://localhost:" + portNum + ";integratedSecurity=true;database=Library";
 		try {
 			connection = DriverManager.getConnection(connectionUrl);
 			System.out.println("Connected");
