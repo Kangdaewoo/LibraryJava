@@ -17,11 +17,11 @@ import java.util.Set;
 public class Bridge {
 	public static Bridge BRIDGE = null;
 
+	private int portNum = 1433;
 	private Connection connection;
 	private Statement statement;
 
 	private Bridge() {
-		int portNum = 1433;
 		String connectionUrl = "jdbc:sqlserver://localhost:" + portNum + ";integratedSecurity=true;database=Library";
 		try {
 			connection = DriverManager.getConnection(connectionUrl);
