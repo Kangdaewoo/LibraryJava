@@ -6,4 +6,4 @@ Uses Java, Microsoft sql server.
 2. In Bridge.java check the port number.
 3. Run Desk.java.
 
-Admin is not yet implemented, thus you can only add new books by running sql queries only.
+Admin is not yet implemented, thus you can only add new books by running sql queries.
