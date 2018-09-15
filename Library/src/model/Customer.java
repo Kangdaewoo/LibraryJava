@@ -23,13 +23,20 @@ public class Customer {
 	public void addBook(Book book) {
 		books.add(book);
 	}
+	
+	public boolean canBorrow(Book book) {
+		Iterator<Book> iterator = books.iterator();
+		while (iterator.hasNext()) {
+			Book b = iterator.next();
+			if (b.getID() == book.getID()) {
+				return false;
+			}
+		}
+		return books.size() < Constant.NUM_BOOK_LIMIT;
+	}
 
-	public boolean borrow(Book book) {
-		if (books.size() >= Constant.NUM_BOOK_LIMIT)
-			return false;
-
+	public void borrow(Book book) {
 		books.add(book);
-		return true;
 	}
 
 	public void returns(Book book) {

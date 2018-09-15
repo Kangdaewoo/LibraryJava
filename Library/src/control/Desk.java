@@ -5,6 +5,7 @@ import java.util.Set;
 import model.Book;
 import model.Bridge;
 import model.Customer;
+import model.NotAvailableException;
 import view.Application;
 
 public class Desk {
@@ -36,10 +37,16 @@ public class Desk {
 	 * @return
 	 */
 	public boolean borrow(Book book) {
-		if (book.isAvailable() && Bridge.BRIDGE.canBorrow(customer, book) && customer.borrow(book)) {
-			Bridge.BRIDGE.borrow(customer, book);
-			book.borrow();
-			return true;
+		if (book.isAvailable() && customer.canBorrow(book)) {
+			try {
+				Bridge.BRIDGE.borrow(customer, book);
+				customer.borrow(book);
+				book.borrow();
+				return true;
+			} catch (NotAvailableException e) {
+				e.printStackTrace();
+				return false;
+			}
 		}
 		return false;
 	}
@@ -84,6 +91,6 @@ public class Desk {
 	}
 	
 	public static void main(String[] args) {
-		Application app = new Application(new Desk());
+		new Application(new Desk());
 	}
 }

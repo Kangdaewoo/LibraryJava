@@ -135,7 +135,7 @@ public class Application {
 				JOptionPane.showMessageDialog(null, "Borrowed!");
 				setMainPage();
 			} else {
-				JOptionPane.showMessageDialog(null, "Not available!");
+				JOptionPane.showMessageDialog(null, "Not available or borrowed already!");
 			}
 		});
 		frame.add(borrowButton);
@@ -201,6 +201,8 @@ public class Application {
 	}
 	
 	public class HintTextField extends JTextField {
+		private static final long serialVersionUID = 1L;
+		
 		private final String hint;
 		
 		private HintTextField(String hint) {

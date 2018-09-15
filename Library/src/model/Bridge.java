@@ -17,7 +17,7 @@ import java.util.Set;
 public class Bridge {
 	public static Bridge BRIDGE = null;
 
-	private int portNum = 1433;
+	private final int portNum = 1433;
 	private Connection connection;
 	private Statement statement;
 
@@ -39,7 +39,7 @@ public class Bridge {
 	}
 
 	/**
-	 * Returns a set of all books that contans the given title or author in
+	 * Returns a set of all books that contains the given title or author in
 	 * their title or author respectively.
 	 * 
 	 * @param title
@@ -48,45 +48,36 @@ public class Bridge {
 	 */
 	public Set<Book> search(String title, String author) {
 		Set<Book> books = new HashSet<>();
-		// SELECT * FROM Books WHERE title LIKE '%Title%' OR author LIKE '%Author%';
-		String query = "SELECT * FROM Books WHERE title LIKE '%" + title + "%' OR author LIKE '%" + author + "%'";
+		// SELECT TOP NUM_MAX_RECOMMENDATIONS b.book_id, title, author, quantity, CASE WHEN rating is NULL THEN 0 ELSE rating END rating
+		// FROM 
+		//	(SELECT * FROM Books
+		//	WHERE title LIKE '%title%' OR author LIKE '%author%') b LEFT JOIN
+		//	(SELECT r.book_id, AVG(rating) rating FROM Ratings r GROUP BY r.book_id) r
+		//	ON b.book_id = r.book_id
+		// ORDER BY rating DESC;
+		String query = "SELECT TOP " + Constant.NUM_MAX_RECOMMENDATIONS + 
+						" b.book_id, title, author, quantity, CASE WHEN rating IS NULL THEN 0 ELSE rating END rating " +
+						"FROM (SELECT * FROM Books WHERE title LIKE '%" + title + "%' OR author LIKE '%" + author + 
+						"%') b LEFT JOIN (SELECT r.book_id, AVG(rating) rating FROM Ratings r GROUP BY r.book_id) r " +
+						"ON b.book_id = r.book_id ORDER BY rating DESC";
 		try {
 			ResultSet rs = statement.executeQuery(query);
-			int breaker = 0;
-			// Only up to NUM_MAX_RECOMMENDATIONS number of books.
-			while (rs.next() && breaker < Constant.NUM_MAX_RECOMMENDATIONS) {
+			while (rs.next()) {
 				books.add(new Book(rs.getInt("book_id"), rs.getString("title"), rs.getString("author"),
 						rs.getInt("quantity")));
-				breaker++;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return books;
 	}
-
-	public boolean canBorrow(Customer customer, Book book) {
-		// SELECT * FROM Transactions WHERE customer_id=customer.ID AND book_id=book.ID;
-		String query = "SELECT * FROM Transactions WHERE customer_id=" + customer.getID() + " AND book_id="
-				+ book.getID();
-		try {
-			ResultSet rs = statement.executeQuery(query);
-			if (rs.next()) {
-				return false;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return true;
-	}
-
+	
 	/**
-	 * Assumption: canBorrow method in Bridge has output true for the given
-	 * customer and book.
+	 * If the book is not available return false, return true otherwise.
 	 * @param customer
 	 * @param book
 	 */
-	public void borrow(Customer customer, Book book) {
+	public void borrow(Customer customer, Book book) throws NotAvailableException {
 		// UPDATE Books SET quantity=book.quantity-1 WHERE title='title' AND author='author';
 		String query = "UPDATE Books SET quantity=" + (book.getQuantity() - 1) + " WHERE title='" + book.getTitle()
 				+ "' AND author='" + book.getAuthor() + "'";
@@ -94,24 +85,25 @@ public class Bridge {
 			statement.executeUpdate(query);
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}
-
-		// SELECT max(transaction_id) AS max_transaction_id FROM transactions;
-		int transaction_id = 0;
-		query = "SELECT max(transaction_id) AS max_transaction_id FROM Transactions";
-		try {
-			ResultSet rs = statement.executeQuery(query);
-			if (rs.next()) {
-				transaction_id = rs.getInt("max_transaction_id") + 1;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+			throw new NotAvailableException("Book is currently not available\n");
 		}
 
 		// INSERT INTO Transactions (transaction_id, customer_id, book_id)
-		// VALUES (transaction_id, customer.ID, book.ID);
-		query = "INSERT INTO Transactions (transaction_id, customer_id, book_id) VALUES (" + transaction_id + ", "
-				+ customer.getID() + ", " + book.getID() + ")";
+		// VALUES ((SELECT 
+		// 			CASE
+		//				WHEN max(transaction_id) + 1 IS NULL 
+		//					THEN 0
+		//				ELSE max(transaction_id) + 1
+		//			END
+		//			FROM Transactions), 0, 2);
+		query = "INSERT INTO Transactions (transaction_id, customer_id, book_id) " +
+				"VALUES ((SELECT " +
+							"CASE " +
+								"WHEN max(transaction_id) + 1 IS NULL " +
+									"THEN 0 " +
+								"ELSE max(transaction_id) + 1 " +
+							"END " +
+						"FROM Transactions), " + customer.getID() + ", " + book.getID() + ")";
 		try {
 			statement.executeUpdate(query);
 		} catch (SQLException e) {
@@ -135,6 +127,28 @@ public class Bridge {
 			statement.executeUpdate(query);
 		} catch (SQLException e) {
 			e.setNextException(e);
+		}
+		
+		// INSERT INTO ExpiredTransactions (transaction_id, customer_id, book_id)
+		// VALUES ((SELECT 
+		// 				CASE
+		//					WHEN max(transaction_id) + 1 IS NULL 
+		//						THEN 0
+		//					ELSE max(transaction_id) + 1
+		//				END
+		//			FROM ExpiredTransactions), customer.ID, book.ID);
+		query = "INSERT INTO ExpiredTransactions (transaction_id, customer_id, book_id) " +
+				"VALUES ((SELECT " +
+							"CASE " +
+								"WHEN max(transaction_id) + 1 IS NULL " +
+									"THEN 0 " +
+								"ELSE max(transaction_id) + 1 " +
+							"END " +
+						"FROM ExpiredTransactions), " + customer.getID() + ", " + book.getID() + ")";
+		try {
+			statement.executeUpdate(query);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -167,43 +181,29 @@ public class Bridge {
 	}
 
 	public Customer createCustomer(String firstName, String lastName) {
-		// SELECT max(customer_id) FROM Customers;
-		String query = "SELECT max(customer_id) as max_customer_id FROM Customers";
-		int customer_id = 0;
-		try {
-			ResultSet rs = statement.executeQuery(query);
-			if (rs.next()) {
-				customer_id = rs.getInt("max_customer_id") + 1;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		// SELECT customer_id FROM Customers WHERE first_name=firstName AND last_name=lastName;
-		query = "SELECT customer_id FROM Customers WHERE first_name='" + firstName + "' AND last_name='" + lastName
-				+ "'";
-		Customer customer = null;
-		try {
-			ResultSet rs = statement.executeQuery(query);
-			if (!rs.next()) {
-				customer = new Customer(customer_id, firstName, lastName);
-			} else {
-				return customer;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		// INSERT INTO Customers (customer_id, first_name, last_name)
-		// VALUES (customer_id+1, firstName, lastName);
-		query = "INSERT INTO Customers (customer_id, first_name, last_name) VALUES (" + customer_id + ", '" + firstName
-				+ "', '" + lastName + "')";
+		// INSERT INTO Customer (customer_id, first_name, last_name)
+		// VALUES ((SELECT 
+		// 				CASE
+		//					WHEN max(customer_id) + 1 IS NULL 
+		//						THEN 0
+		//					ELSE max(customer_id) + 1
+		//				END
+		//			FROM Customer), firstName, lastName);
+		String query = "INSERT INTO Customers (customer_id, first_name, last_name) " + 
+						"VALUES ((SELECT " + 
+									"CASE " + 
+										"WHEN max(customer_id) + 1 IS NULL " + 
+											"THEN 0 " + 
+										"ELSE max(customer_id) + 1 " + 
+									"END " + 
+								"FROM Customers), '" + firstName + "', '" + lastName + "')";
 		try {
 			statement.executeUpdate(query);
 		} catch (SQLException e) {
 			e.printStackTrace();
+			return null;
 		}
-
-		return customer;
+		
+		return getCustomer(firstName, lastName);
 	}
 }

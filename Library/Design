@@ -5,7 +5,9 @@ Customer:
   - books
   
   -- addBook(book)
-  -- boolean borrow(book)
+  
+  -- boolean canBorrow(book)
+  -- void borrow(book)
   -- void returns(book)
   
   
@@ -25,7 +27,7 @@ Desk:
   -- Set<Book> getBorrowedBooks()
   
   -- Set<Book> search(title, author)
-  
+
   -- boolean borrow(book)
   -- void returns(book)
   
@@ -43,7 +45,6 @@ Bridge:
   
   -- Set<Book> search(title, author)
 
-  -- boolean canBorrow(customer, book)
   -- void borrow(book)
   -- void returns(book)
   
