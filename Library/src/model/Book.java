@@ -13,13 +13,15 @@ public class Book {
 	
 	// Number of books available for lent
 	private int quantity;
+	private float rating;
 
-	public Book(int id, String title, String author, int quantity) {
+	public Book(int id, String title, String author, int quantity, float rating) {
 		ID = id;
 		TITLE = title;
 		AUTHOR = author;
 		
 		this.quantity = quantity;
+		this.rating = rating;
 	}
 
 	public boolean isAvailable() {
@@ -38,7 +40,7 @@ public class Book {
 	 */
 	public static Book stringToBook(String bookInString) {
 		String[] strings = bookInString.split(", ");
-		return new Book(Integer.parseInt(strings[0]), strings[1], strings[2], Integer.parseInt(strings[3]));
+		return new Book(Integer.parseInt(strings[0]), strings[1], strings[2], Integer.parseInt(strings[3]), Float.parseFloat(strings[4]));
 	}
 
 	/**
@@ -46,7 +48,7 @@ public class Book {
 	 */
 	@Override
 	public String toString() {
-		return ID + ", " + TITLE + ", " + AUTHOR + ", " + quantity;
+		return ID + ", " + TITLE + ", " + AUTHOR + ", " + quantity + ", " + rating;
 	}
 
 	////////////////////////////////////////////////////////////

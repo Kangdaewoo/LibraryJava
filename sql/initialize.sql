@@ -29,7 +29,7 @@ CREATE TABLE Transactions (
 	UNIQUE (customer_id, book_id)
 );
 
-CREATE TABLE ExpiredTransactions (
+CREATE TABLE Expired_transactions (
 	transaction_id INTEGER PRIMARY KEY,
 	customer_id INTEGER FOREIGN KEY REFERENCES Customers(customer_id),
 	book_id INTEGER FOREIGN KEY REFERENCES Books(book_id)
@@ -40,11 +40,19 @@ CREATE TABLE Ratings (
 	customer_id INTEGER FOREIGN KEY REFERENCES Customers(customer_id),
 	book_id INTEGER FOREIGN KEY REFERENCES Books(book_id),
 	comment CHAR(120) NOT NULL,
-	rating FLOAT(24) NOT NULL CHECK (rating >= 0 AND rating <=10),
+	rating INTEGER NOT NULL CHECK (rating >= 0 AND rating <=10),
 
 	UNIQUE (customer_id, book_id)
 );
 
+GO
+
+CREATE VIEW Books_with_ratings AS
+SELECT b1.book_id, CASE WHEN AVG(rating) IS NULL THEN 0 ELSE AVG(rating) END rating
+FROM Books b1 LEFT JOIN Ratings r1 ON b1.book_id = r1.book_id
+GROUP BY b1.book_id;
+
+GO
 
 INSERT INTO Books (book_id, title, author, quantity)
 VALUES 

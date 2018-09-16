@@ -11,14 +11,17 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
 import control.Desk;
 import model.Book;
+import model.Constant;
 
 public class Application {
 	private JFrame frame;
@@ -29,6 +32,8 @@ public class Application {
 	private DefaultListModel<String> borrowedBooks;
 
 	private Desk desk;
+	
+	private Book toRate;
 
 	public Application(Desk desk) {
 		this.desk = desk;
@@ -164,7 +169,13 @@ public class Application {
 			
 			JOptionPane.showMessageDialog(null, "Returned!");
 			
-			setMainPage();
+			int reply = JOptionPane.showConfirmDialog(null, "Would you rate this book?");
+			if (reply == JOptionPane.YES_OPTION) {
+				toRate = book;
+				setRatePage();
+			} else {
+				setMainPage();
+			}
 		});
 		frame.add(returnButton);
 
@@ -178,6 +189,46 @@ public class Application {
 		});
 		frame.add(signOutButton);
 
+		frame.revalidate();
+		frame.repaint();
+	}
+	
+	private void setRatePage() {
+		frame.getContentPane().removeAll();
+		frame.setLayout(null);
+		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
+		
+		JLabel bookLabel = new JLabel(toRate.toString());
+		frame.add(bookLabel);
+		
+		JSlider ratingSlider = new JSlider(JSlider.HORIZONTAL, Constant.MIN_RATE, Constant.MAX_RATE, Constant.MAX_RATE);
+		JLabel sliderLabel = new JLabel("" + Constant.MAX_RATE);
+		ratingSlider.addChangeListener(e -> {
+			sliderLabel.setText("" + ratingSlider.getValue());
+		});
+		frame.add(ratingSlider);
+		frame.add(sliderLabel);
+		
+		HintTextField commentField = new HintTextField("Your thoughts on this book? (Less than 120 characters.)");
+		frame.add(commentField);
+		
+		JButton recordRating = new JButton("Record");
+		recordRating.addActionListener(e -> {
+			String comment = commentField.getText();
+			if (comment.length() > Constant.MAX_COMMENT_LENGTH) {
+				JOptionPane.showMessageDialog(null, "Comment must be less than 120 characters!");
+				return;
+			}
+			
+			if (desk.recordRating(toRate, ratingSlider.getValue(), comment)) {
+				JOptionPane.showMessageDialog(null, "Successfully recorded!");
+			} else {
+				JOptionPane.showMessageDialog(null, "You've already rated this book!");
+			}
+			setMainPage();
+		});
+		frame.add(recordRating);
+		
 		frame.revalidate();
 		frame.repaint();
 	}

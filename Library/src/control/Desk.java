@@ -4,6 +4,7 @@ import java.util.Set;
 
 import model.Book;
 import model.Bridge;
+import model.Constant;
 import model.Customer;
 import model.NotAvailableException;
 import view.Application;
@@ -88,6 +89,13 @@ public class Desk {
 		}
 		customer = Bridge.BRIDGE.createCustomer(firstName, lastName);
 		return customer == null;
+	}
+	
+	public boolean recordRating(Book book, int rating, String comment) {
+		if (comment.length() > Constant.MAX_COMMENT_LENGTH) {
+			return false;
+		}
+		return Bridge.BRIDGE.recordRating(customer, book, rating, comment);
 	}
 	
 	public static void main(String[] args) {

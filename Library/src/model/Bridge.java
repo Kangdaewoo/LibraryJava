@@ -64,7 +64,7 @@ public class Bridge {
 			ResultSet rs = statement.executeQuery(query);
 			while (rs.next()) {
 				books.add(new Book(rs.getInt("book_id"), rs.getString("title"), rs.getString("author"),
-						rs.getInt("quantity")));
+						rs.getInt("quantity"), rs.getInt("rating")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -129,22 +129,22 @@ public class Bridge {
 			e.setNextException(e);
 		}
 		
-		// INSERT INTO ExpiredTransactions (transaction_id, customer_id, book_id)
+		// INSERT INTO Expired_transactions (transaction_id, customer_id, book_id)
 		// VALUES ((SELECT 
 		// 				CASE
 		//					WHEN max(transaction_id) + 1 IS NULL 
 		//						THEN 0
 		//					ELSE max(transaction_id) + 1
 		//				END
-		//			FROM ExpiredTransactions), customer.ID, book.ID);
-		query = "INSERT INTO ExpiredTransactions (transaction_id, customer_id, book_id) " +
+		//			FROM Expired_transactions), customer.ID, book.ID);
+		query = "INSERT INTO Expired_transactions (transaction_id, customer_id, book_id) " +
 				"VALUES ((SELECT " +
 							"CASE " +
 								"WHEN max(transaction_id) + 1 IS NULL " +
 									"THEN 0 " +
 								"ELSE max(transaction_id) + 1 " +
 							"END " +
-						"FROM ExpiredTransactions), " + customer.getID() + ", " + book.getID() + ")";
+						"FROM Expired_transactions), " + customer.getID() + ", " + book.getID() + ")";
 		try {
 			statement.executeUpdate(query);
 		} catch (SQLException e) {
@@ -167,12 +167,15 @@ public class Bridge {
 			e.printStackTrace();
 		}
 		
-		// SELECT * FROM Books WHERE book_id IN (SELECT book_id FROM Transactions WHERE customer_id=customer.ID);
-		query = "SELECT * FROM Books WHERE book_id IN (SELECT book_id FROM Transactions WHERE customer_id=" + customer.getID() + ")";
+		// SELECT b2.title, b2.author, b2.quantity, b1.rating
+		// FROM Books_with_ratings b1 JOIN Books b2 ON b1.book_id = b2.book_id
+		// WHERE b1.book_id IN (SELECT book_id FROM Transactions WHERE customer_id=customer.ID);
+		query = "SELECT b2.book_id, b2.title, b2.author, b2.quantity, b1.rating FROM Books_with_ratings b1 JOIN Books b2 ON b1.book_id = b2.book_id " +
+				"WHERE b1.book_id IN (SELECT book_id FROM Transactions WHERE customer_id = " + customer.getID() + ")";
 		try {
 			ResultSet rs = statement.executeQuery(query);
 			while (rs.next()) {
-				customer.addBook(new Book(rs.getInt("book_id"), rs.getString("title"), rs.getString("author"), rs.getInt("quantity")));
+				customer.addBook(new Book(rs.getInt("book_id"), rs.getString("title"), rs.getString("author"), rs.getInt("quantity"), rs.getInt("rating")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -190,12 +193,7 @@ public class Bridge {
 		//				END
 		//			FROM Customer), firstName, lastName);
 		String query = "INSERT INTO Customers (customer_id, first_name, last_name) " + 
-						"VALUES ((SELECT " + 
-									"CASE " + 
-										"WHEN max(customer_id) + 1 IS NULL " + 
-											"THEN 0 " + 
-										"ELSE max(customer_id) + 1 " + 
-									"END " + 
+						"VALUES ((SELECT CASE WHEN max(customer_id) + 1 IS NULL THEN 0 ELSE max(customer_id) + 1 END " + 
 								"FROM Customers), '" + firstName + "', '" + lastName + "')";
 		try {
 			statement.executeUpdate(query);
@@ -205,5 +203,21 @@ public class Bridge {
 		}
 		
 		return getCustomer(firstName, lastName);
+	}
+	
+	public boolean recordRating(Customer customer, Book book, int rating, String comment) {
+		// INSERT INTO Ratings (rating_id, customer_id, book_id, comment, rating)
+		// VALUES ((SELECT CASE WHEN MAX(rating_id) + 1 IS NULL THEN 0 ELSE MAX(rating_id) + 1 END FROM Ratings), 
+		// customer.ID, book.ID, comment, rating);
+		String query = "INSERT INTO Ratings (rating_id, customer_id, book_id, comment, rating) " + 
+						"VALUES ((SELECT CASE WHEN MAX(rating_id) + 1 IS NULL THEN 0 ELSE MAX(rating_id) + 1 END FROM Ratings), " +
+						customer.getID() + ", " + book.getID() + ", '" + comment + "', " + rating + ")";
+		try {
+			statement.executeUpdate(query);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 }
